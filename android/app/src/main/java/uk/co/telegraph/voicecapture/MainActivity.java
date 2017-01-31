@@ -11,6 +11,9 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TEST_TRUMP_TEXT = "When Mexico sends its people, they're not sending their best. They're not sending you. They're not sending you. They're sending people that have lots of problems, and they're bringing those problems with us. They're bringing drugs. They're bringing crime. They're rapists. And some, I assume, are good people.";
+    private RemoteDatabase remoteDb;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -18,16 +21,33 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        remoteDb = new RemoteDatabase();
+        
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                remoteDb.uploadText(System.currentTimeMillis(), TEST_TRUMP_TEXT);
+                
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        remoteDb.onStart(this);
+    }
+
+    @Override
+    public void onStop() {
+        remoteDb.onStop();
+
+        super.onStop();
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
