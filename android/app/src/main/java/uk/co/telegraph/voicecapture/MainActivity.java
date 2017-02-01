@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
             // PS: I'll put my test stubs here, K?
 //            remoteDb.uploadText(System.currentTimeMillis(), TEST_TRUMP_TEXT);
 
-            makeAndTestFilepload();
+            makeAndTestFileUpload();
 
 
             return true;
@@ -208,11 +208,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void makeAndTestFilepload() {
+    private void makeAndTestFileUpload() {
 
         final String testFilename = getExternalCacheDir().getAbsolutePath() + "/test_up.amr";
 
-        File f = new File(testFilename);
+//        File f = new File(testFilename);
+        File f = new File(mFileName);
 
         try {
             FileWriter writer = new FileWriter(f);

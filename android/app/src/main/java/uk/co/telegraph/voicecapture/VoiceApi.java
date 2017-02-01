@@ -21,18 +21,16 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
 
+import retrofit2.http.Query;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 class Config {
-    String encoding; // enum(AudioEncoding),
+    String encoding;    // enum(AudioEncoding),
     long sampleRate;
     String languageCode;
-//            "maxAlternatives": number,
-//            "profanityFilter": boolean,
-
 
     Config() {
         this.encoding = "AMR_WB";
@@ -43,11 +41,11 @@ class Config {
 
 class AudioData {
     final Config config;
-    final String content;
+    final String audio;
 
     AudioData(File data) throws IOException {
         config = new Config();
-        content = Base64.encodeToString(readFile(data), Base64.DEFAULT);
+        audio = Base64.encodeToString(readFile(data), Base64.DEFAULT);
     }
 
     private byte[] readFile(File file) throws IOException {
@@ -63,14 +61,12 @@ class AudioData {
 
 class VoiceApi {
 
-//    private final static String baseUrl = "https://www.googleapis.com/";
-    private final static String apiKey = "AIzaSyBSl2CYu6EE9d6X7XY93QcK1juuKqz_9h0";
-
-    private final static String baseUrl = "https://speech.googleapis.com/v1beta1/speech:syncrecognize";
+    private final static String apiKey = "AIzaSyAyQvf3giU4IT9LNZTzKaogZJ8A-4ClhHI";
+    private final static String baseUrl = "https://speech.googleapis.com/";
 
     interface SpeechApi {
-        @POST("/v1beta1/speech:syncrecognize")
-        Observable<String> processAudio(@Body AudioData payload);
+        @POST("v1beta1/speech:syncrecognize")
+        Observable<String> processAudio(@Query("key") String key, @Body AudioData payload);
     }
 
     private SpeechApi speechApi = null;
@@ -82,7 +78,7 @@ class VoiceApi {
     }
 
     Observable<String> processSpeech(File file) throws IOException {
-        speechApi.processAudio(new AudioData(file))
+        speechApi.processAudio(apiKey, new AudioData(file))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(subject::onNext, this::onError);
@@ -101,9 +97,6 @@ class VoiceApi {
                 .addInterceptor(chain -> {
                     final Request request = chain.request().newBuilder()
                             .addHeader("content-type", "application/json")
-                            .addHeader("x-goog-project-id",  "403331737503")
-//                            .addHeader("Accept", "application/json")
-                            .addHeader("api_key", apiKey)
                             .build();
 
                     return chain.proceed(request);
