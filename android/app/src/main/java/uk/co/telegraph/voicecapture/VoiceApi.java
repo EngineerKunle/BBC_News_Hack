@@ -48,6 +48,11 @@ class AudioData {
         audio = Base64.encodeToString(readFile(data), Base64.DEFAULT);
     }
 
+    AudioData(byte[] payload) {
+        config = new Config();
+        audio = Base64.encodeToString(payload, Base64.DEFAULT);
+    }
+
     private byte[] readFile(File file) throws IOException {
         int size = (int) file.length();
         byte[] bytes = new byte[size];
@@ -79,6 +84,15 @@ class VoiceApi {
 
     Observable<String> processSpeech(File file) throws IOException {
         speechApi.processAudio(apiKey, new AudioData(file))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(subject::onNext, this::onError);
+
+        return subject;
+    }
+
+    Observable<String> processSpeech(byte[] payload) throws IOException {
+        speechApi.processAudio(apiKey, new AudioData(payload))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(subject::onNext, this::onError);
