@@ -135,9 +135,9 @@ class VoiceApi {
     }
 
     private void onResult(Results results) {
-        Log.e("wibble", results.toString());
+        Log.d(MainActivity.TAG, results.toString());
 
-        if(results == null) {
+        if(results.results == null) {
             return;
         }
 
@@ -148,7 +148,7 @@ class VoiceApi {
     }
 
     private void onError(Throwable e) {
-        Log.e("Wibble", e.getMessage());
+        Log.e(MainActivity.TAG, e.getMessage());
     }
 
     private void createCloudApi() {

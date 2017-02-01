@@ -63,15 +63,13 @@ class RemoteDatabase {
         }
     }
 
-    private
-
-    static Observable<TextBlock> doTextUpload(final TextBlock text) {
+    private static Observable<TextBlock> doTextUpload(final TextBlock text) {
         Observable<TextBlock> o = Observable.create(new Observable.OnSubscribe<TextBlock>() {
             @Override
             public void call(final Subscriber<? super TextBlock> subscriber) {
                 FirebaseDatabase database = FirebaseDatabase.getInstance();
-                DatabaseReference puzzleDb = database.getReference(TEXT_DATABASE_NAME);
-                DatabaseReference entryRef = puzzleDb.push();
+                DatabaseReference theDb = database.getReference(TEXT_DATABASE_NAME);
+                DatabaseReference entryRef = theDb.push();
 
                 entryRef.setValue(text, (e, ref) -> {
                     if (null == e) {

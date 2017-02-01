@@ -8,6 +8,6 @@
         android:layout_height="wrap_content"
         android:id="@+id/recording_change"
         android:layout_margin="@dimen/text_margin"
-        android:text="@string/main_activity_recording"/>
+        android:textSize="20dp"/>
 
 </LinearLayout>

@@ -1,11 +1,12 @@
 package uk.co.telegraph.voicecapture;
 
-import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -14,21 +15,18 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
-import rx.Observable;
 import rx.Subscription;
 import uk.co.telegraph.voicecapture.Utils.PermissionUtils;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String TAG = MainActivity.class.getSimpleName();
+    public static final String TAG = "Voice Capture";
 
     private RemoteDatabase remoteDb;
     private VoiceApi       voiceApi;
@@ -39,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static String mFileName = null;
 
-    private Toolbar  toolbar;
     private TextView textView;
 
     private Subscription subscription;
@@ -75,8 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private void onError(Throwable t) {
         AlertDialog.Builder dlgBuilder = new AlertDialog.Builder(this);
         dlgBuilder.setTitle("Oooooops")
-                .setMessage("Well, that's not ideal\n" + t.getMessage())
-//                .setPositiveButton("Hey-ho", v -> ())
+                .setMessage("Well, that's not ideal!" + t.getMessage())
                 .create();
     }
     @Override
@@ -123,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setUpViews(){
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -144,32 +140,31 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestFabButton(){
         if (PermissionUtils.isAudioRecordingAllowed(this)) {
-            Toast.makeText(this, "we can record", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Ready to record", Toast.LENGTH_LONG).show();
         } else {
             PermissionUtils.requestRecordAudio(this);
             fab.setVisibility(View.INVISIBLE);
         }
     }
 
-
     View.OnTouchListener record = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
+            final ActionBar bar = getSupportActionBar();
+
             switch (event.getAction()){
                 case MotionEvent.ACTION_DOWN:
 
                     startRecording();
-                    toolbar.setBackgroundColor(getResources().getColor(R.color.red));
-//                    mTextView.setText("Recording");
-//                    mTextView.setTextColor(Color.RED);
+                    bar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.red)));
+                    bar.setTitle("Recording");
                     fab.setPressed(true);
                     return true;
                 case MotionEvent.ACTION_UP:
                     stopRecording();
-                    toolbar.setBackgroundColor(getResources().getColor(R.color.blue));
+                    bar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.blue)));
+                    bar.setTitle(R.string.app_name);
                     fab.setPressed(false);
-//                    mTextView.setTextColor(Color.BLACK);
-//                    mTextView.setText("You can record");
                     return true;
             }
             return false;
