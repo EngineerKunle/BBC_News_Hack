@@ -39,18 +39,27 @@ class Config {
     }
 }
 
+class AudioBytes {
+    final String content;
+
+    AudioBytes(byte[] bytes) {
+//        Base64.encodeBase64(bytes);
+        content = Base64.encodeToString(bytes, Base64.NO_WRAP);
+    }
+}
+
 class AudioData {
     final Config config;
-    final String audio;
+    final AudioBytes audio;
 
     AudioData(File data) throws IOException {
         config = new Config();
-        audio = Base64.encodeToString(readFile(data), Base64.DEFAULT);
+        audio = new AudioBytes(readFile(data));
     }
 
     AudioData(byte[] payload) {
         config = new Config();
-        audio = Base64.encodeToString(payload, Base64.DEFAULT);
+        audio = new AudioBytes(payload);
     }
 
     private byte[] readFile(File file) throws IOException {

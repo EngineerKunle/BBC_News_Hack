@@ -209,22 +209,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void makeAndTestFileUpload() {
-
-        final String testFilename = getExternalCacheDir().getAbsolutePath() + "/test_up.amr";
-
-//        File f = new File(testFilename);
         File f = new File(mFileName);
-
         try {
-            FileWriter writer = new FileWriter(f);
-            writer.append(TEST_TRUMP_TEXT);
-            writer.flush();
-            writer.close();
-
             voiceApi.processSpeech(f);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }
