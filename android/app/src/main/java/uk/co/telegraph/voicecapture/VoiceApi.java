@@ -103,6 +103,7 @@ class VoiceApi {
     private final static String apiKey = "AIzaSyAyQvf3giU4IT9LNZTzKaogZJ8A-4ClhHI";
     private final static String baseUrl = "https://speech.googleapis.com/";
 
+    public final static String INDISTINCT_RESULT = "< INDISTINCT >";
     interface SpeechApi {
         @POST("v1beta1/speech:syncrecognize")
         Observable<Results> processAudio(@Query("key") String key, @Body AudioData payload);
@@ -138,6 +139,7 @@ class VoiceApi {
         Log.d(MainActivity.TAG, results.toString());
 
         if(results.results == null) {
+            subject.onNext(INDISTINCT_RESULT);
             return;
         }
 
@@ -149,6 +151,7 @@ class VoiceApi {
 
     private void onError(Throwable e) {
         Log.e(MainActivity.TAG, e.getMessage());
+        subject.onError(e);
     }
 
     private void createCloudApi() {

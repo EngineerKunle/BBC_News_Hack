@@ -1,5 +1,6 @@
 package uk.co.telegraph.voicecapture;
 
+import android.app.ProgressDialog;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -15,6 +16,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private static String mFileName = null;
 
     private TextView textView;
+    private ProgressDialog progressDlg;
 
     private Subscription subscription;
 
@@ -65,16 +68,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onTextReceived(String txt) {
-        remoteDb.uploadText(System.currentTimeMillis(), txt);
+        closeProgress();
+
+        if(!VoiceApi.INDISTINCT_RESULT.equalsIgnoreCase(txt)) {
+            remoteDb.uploadText(System.currentTimeMillis(), txt);
+        }
         textView.setText(textView.getText() + "\n" + txt);
     }
 
     private void onError(Throwable t) {
+        closeProgress();
         AlertDialog.Builder dlgBuilder = new AlertDialog.Builder(this);
         dlgBuilder.setTitle("Oooooops")
                 .setMessage("Well, that's not ideal!" + t.getMessage())
                 .create();
     }
+
+    private synchronized void closeProgress() {
+        if(progressDlg != null) {
+            progressDlg.dismiss();
+            progressDlg = null;
+        }
+    }
+
+    private synchronized void showProgress() {
+        if(progressDlg == null) {
+            progressDlg = ProgressDialog.show(this, "Please wait ...", "Working on it...", true);
+            progressDlg.setCancelable(false);
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -104,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
         if(subscription != null) {
             subscription.unsubscribe();
+            subscription = null;
         }
 
         remoteDb.onStop();
@@ -218,9 +242,10 @@ public class MainActivity extends AppCompatActivity {
     private void processAudio() {
         File f = new File(mFileName);
         try {
+            showProgress();
             voiceApi.processSpeech(f);
         } catch (IOException e) {
-            e.printStackTrace();
+            onError(e);
         }
     }
 }
