@@ -3,6 +3,7 @@
           package="uk.co.telegraph.voicecapture">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:allowBackup="true"

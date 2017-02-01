@@ -90,4 +90,7 @@
         "when a user tries to pick up one of cards.\n\n"
     </string>
     <string name="action_settings">Settings</string>
+    <string name="main_activity_recording">record</string>
+    <string name="press_play">Play</string>
+    <string name="press_stop">stop</string>
 </resources>
