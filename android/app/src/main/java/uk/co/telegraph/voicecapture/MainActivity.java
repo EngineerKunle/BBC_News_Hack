@@ -6,6 +6,7 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -21,16 +22,16 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import rx.Observable;
+import rx.Subscription;
 import uk.co.telegraph.voicecapture.Utils.PermissionUtils;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String TEST_TRUMP_TEXT = "When Mexico sends its people, they're not sending their best. They're not sending you. They're not sending you. They're sending people that have lots of problems, and they're bringing those problems with us. They're bringing drugs. They're bringing crime. They're rapists. And some, I assume, are good people.";
+    public static final String TAG = MainActivity.class.getSimpleName();
 
     private RemoteDatabase remoteDb;
     private VoiceApi       voiceApi;
-
 
     private FloatingActionButton fab;
     private MediaPlayer mp = null;
@@ -38,9 +39,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static String mFileName = null;
 
-    private Button playButton;
-    private Button stopButton;
-    private TextView mTextView;
+    private Toolbar  toolbar;
+    private TextView textView;
+
+    private Subscription subscription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +53,7 @@ public class MainActivity extends AppCompatActivity {
         voiceApi = new VoiceApi();
 
         // Record to the external cache directory for visibility
-        mFileName = getExternalCacheDir().getAbsolutePath();
-        mFileName += "/audiorecord.amr";
+        mFileName = getExternalCacheDir().getAbsolutePath() + "/audiorecord.amr";
         remoteDb = new RemoteDatabase();
 
         setUpViews();
@@ -62,9 +63,22 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
 
+        subscription = voiceApi.subscribe(this::onTextReceived, this::onError);
         remoteDb.onStart(this);
     }
 
+    private void onTextReceived(String txt) {
+        remoteDb.uploadText(System.currentTimeMillis(), txt);
+        textView.setText(textView.getText() + "\n" + txt);
+    }
+
+    private void onError(Throwable t) {
+        AlertDialog.Builder dlgBuilder = new AlertDialog.Builder(this);
+        dlgBuilder.setTitle("Oooooops")
+                .setMessage("Well, that's not ideal\n" + t.getMessage())
+//                .setPositiveButton("Hey-ho", v -> ())
+                .create();
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -80,21 +94,22 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            // PS: I'll put my test stubs here, K?
-//            remoteDb.uploadText(System.currentTimeMillis(), TEST_TRUMP_TEXT);
-
-            makeAndTestFileUpload();
-
-
-            return true;
+        switch (id) {
+            case R.id.action_start_playback:    playRecording(); return true;
+            case R.id.action_stop_playback:     stopPlayback();  return false;
         }
+
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+
+        if(subscription != null) {
+            subscription.unsubscribe();
+        }
+
         remoteDb.onStop();
         if (mediaRecorder != null) {
             mediaRecorder.release();
@@ -108,18 +123,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setUpViews(){
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        playButton = (Button) findViewById(R.id.button_play);
-        stopButton = (Button) findViewById(R.id.button_stop);
         fab = (FloatingActionButton) findViewById(R.id.fab);
-        mTextView = (TextView) findViewById(R.id.recording_change);
+        textView = (TextView) findViewById(R.id.recording_change);
 
         fab.setOnTouchListener(record);
-
-        playButton.setOnClickListener(this::playRecording);
-        stopButton.setOnClickListener(this::stopPlayback);
 
         requestFabButton();
     }
@@ -148,25 +158,25 @@ public class MainActivity extends AppCompatActivity {
             switch (event.getAction()){
                 case MotionEvent.ACTION_DOWN:
 
-                    startRecording(v);
-                    mTextView.setText("Recording");
-                    mTextView.setTextColor(Color.RED);
+                    startRecording();
+                    toolbar.setBackgroundColor(getResources().getColor(R.color.red));
+//                    mTextView.setText("Recording");
+//                    mTextView.setTextColor(Color.RED);
                     fab.setPressed(true);
                     return true;
                 case MotionEvent.ACTION_UP:
                     stopRecording();
+                    toolbar.setBackgroundColor(getResources().getColor(R.color.blue));
                     fab.setPressed(false);
-                    mTextView.setTextColor(Color.BLACK);
-                    mTextView.setText("You can record");
+//                    mTextView.setTextColor(Color.BLACK);
+//                    mTextView.setText("You can record");
                     return true;
             }
             return false;
         }
     };
 
-
-
-    private void startRecording(View view) {
+    private void startRecording() {
         mediaRecorder = new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_WB);
@@ -186,9 +196,11 @@ public class MainActivity extends AppCompatActivity {
         mediaRecorder.stop();
         mediaRecorder.release();
         mediaRecorder = null;
+
+        processAudio();
     }
 
-    private void playRecording(View view) {
+    private void playRecording() {
         mp = new MediaPlayer();
         try {
             mp.setDataSource(mFileName);
@@ -199,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void stopPlayback(View view){
+    private void stopPlayback(){
         if (mp == null) {
             return;
         } else {
@@ -208,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void makeAndTestFileUpload() {
+    private void processAudio() {
         File f = new File(mFileName);
         try {
             voiceApi.processSpeech(f);

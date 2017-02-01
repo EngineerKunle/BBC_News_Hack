@@ -4,11 +4,13 @@ import android.util.Base64;
 import android.util.Log;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.SerializedName;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -23,10 +25,34 @@ import retrofit2.http.POST;
 
 import retrofit2.http.Query;
 import rx.Observable;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
+// API results
+class Alternative {
+
+    @SerializedName("transcript")
+    public String transcript;
+    @SerializedName("confidence")
+    public Double confidence;
+
+}
+
+class Result {
+    @SerializedName("alternatives")
+    public List<Alternative> alternatives = null;
+
+}
+
+class Results {
+    @SerializedName("results")
+    public List<Result> results = null;
+}
+
+// API params
 class Config {
     String encoding;    // enum(AudioEncoding),
     long sampleRate;
@@ -43,7 +69,6 @@ class AudioBytes {
     final String content;
 
     AudioBytes(byte[] bytes) {
-//        Base64.encodeBase64(bytes);
         content = Base64.encodeToString(bytes, Base64.NO_WRAP);
     }
 }
@@ -80,7 +105,7 @@ class VoiceApi {
 
     interface SpeechApi {
         @POST("v1beta1/speech:syncrecognize")
-        Observable<String> processAudio(@Query("key") String key, @Body AudioData payload);
+        Observable<Results> processAudio(@Query("key") String key, @Body AudioData payload);
     }
 
     private SpeechApi speechApi = null;
@@ -91,22 +116,35 @@ class VoiceApi {
         createCloudApi();
     }
 
-    Observable<String> processSpeech(File file) throws IOException {
+    void processSpeech(File file) throws IOException {
         speechApi.processAudio(apiKey, new AudioData(file))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(subject::onNext, this::onError);
-
-        return subject;
+                .subscribe(this::onResult, this::onError);
     }
 
-    Observable<String> processSpeech(byte[] payload) throws IOException {
+    void processSpeech(byte[] payload) throws IOException {
         speechApi.processAudio(apiKey, new AudioData(payload))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(subject::onNext, this::onError);
+                .subscribe(this::onResult, this::onError);
+    }
 
-        return subject;
+    Subscription subscribe(Action1<String> onNext, Action1<Throwable> onError) {
+        return subject.subscribe(onNext, onError);
+    }
+
+    private void onResult(Results results) {
+        Log.e("wibble", results.toString());
+
+        if(results == null) {
+            return;
+        }
+
+        for(Result r: results.results) {
+            final String txt = r.alternatives.get(0).transcript;
+            subject.onNext(txt);
+        }
     }
 
     private void onError(Throwable e) {
