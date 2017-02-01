@@ -3,8 +3,14 @@
       xmlns:tools="http://schemas.android.com/tools"
       tools:context="uk.co.telegraph.voicecapture.MainActivity">
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/action_start_playback"
         android:orderInCategory="100"
-        android:title="@string/action_settings"
+        android:title="@string/start_playback"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_stop_playback"
+        android:orderInCategory="100"
+        android:title="@string/stop_playback"
         app:showAsAction="never"/>
 </menu>
